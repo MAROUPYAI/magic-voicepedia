@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Magic Voicepedia - Interactive Visual Encyclopedia for Kids</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'kid-blue': '#4FC3F7',
+                        'kid-pink': '#F48FB1',
+                        'kid-green': '#81C784',
+                        'kid-yellow': '#FFD54F',
+                        'kid-purple': '#BA68C8'
+                    },
+                    fontFamily: {
+                        'kid': ['Comic Sans MS', 'cursive', 'sans-serif']
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @keyframes bounce-gentle {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(79, 195, 247, 0.5); }
+            50% { box-shadow: 0 0 40px rgba(79, 195, 247, 0.8); }
+        }
+        
+        @keyframes ken-burns {
+            0% { transform: scale(1) translateX(0) translateY(0); }
+            25% { transform: scale(1.1) translateX(-2%) translateY(-2%); }
+            50% { transform: scale(1.2) translateX(2%) translateY(-1%); }
+            75% { transform: scale(1.15) translateX(-1%) translateY(2%); }
+            100% { transform: scale(1.3) translateX(1%) translateY(-1%); }
+        }
+        
+        @keyframes letter-appear {
+            0% { opacity: 0; transform: scale(0.5) rotate(-10deg); }
+            50% { transform: scale(1.2) rotate(5deg); }
+            100% { opacity: 1; transform: scale(1) rotate(0deg); }
+        }
+        
+        .bounce-gentle {
+            animation: bounce-gentle 2s infinite;
+        }
+        
+        .pulse-glow {
+            animation: pulse-glow 2s infinite;
+        }
+        
+        .ken-burns {
+            animation: ken-burns 10s ease-in-out;
+        }
+        
+        .letter-appear {
+            animation: letter-appear 0.5s ease-out forwards;
+        }
+        
+        .recording {
+            background: linear-gradient(45deg, #ff6b6b, #feca57, #48dbfb, #ff9ff3);
+            background-size: 400% 400%;
+            animation: gradient-shift 1s ease infinite;
+        }
+        
+        @keyframes gradient-shift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-kid-blue via-kid-pink to-kid-purple min-h-screen font-kid">
+    <!-- Header -->
+    <header class="text-center py-6">
+        <h1 class="text-4xl md:text-6xl font-bold text-white drop-shadow-lg">
+            🎭 Magic Voicepedia ✨
+        </h1>
+        <p class="text-lg md:text-xl text-white mt-2 drop-shadow">
+            Say any word and watch the magic happen!
+        </p>
+    </header>
+
+    <!-- Main Container -->
+    <div class="container mx-auto px-4 max-w-6xl">
+        <!-- Initial State - Push to Talk -->
+        <div id="initial-state" class="text-center">
+            <div class="bg-white rounded-3xl shadow-2xl p-8 md:p-12 mb-8">
+                <div class="mb-8">
+                    <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4">
+                        🎤 Ready to Explore?
+                    </h2>
+                    <p class="text-lg md:text-xl text-gray-600 mb-8">
+                        Push the button and say a word!
+                    </p>
+                </div>
+                
+                <!-- Push to Talk Button -->
+                <button id="talk-button" class="bg-kid-green hover:bg-green-400 text-white font-bold py-6 px-12 rounded-full text-2xl md:text-3xl shadow-lg transform transition-all duration-200 hover:scale-105 pulse-glow bounce-gentle">
+                    🎤 Push to Talk
+                </button>
+                
+                <div class="mt-8">
+                    <p class="text-sm md:text-base text-gray-500">
+                        Try saying: "dinosaur", "rainbow", "spell cat", or any word you're curious about!
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recording State -->
+        <div id="recording-state" class="text-center hidden">
+            <div class="bg-white rounded-3xl shadow-2xl p-8 md:p-12 mb-8">
+                <div class="recording rounded-full w-32 h-32 md:w-40 md:h-40 mx-auto flex items-center justify-center mb-6">
+                    <span class="text-4xl md:text-5xl">🎤</span>
+                </div>
+                <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4">
+                    🎧 Listening...
+                </h2>
+                <p class="text-lg text-gray-600">
+                    Speak clearly and release the button when done!
+                </p>
+            </div>
+        </div>
+
+        <!-- Processing State -->
+        <div id="processing-state" class="text-center hidden">
+            <div class="bg-white rounded-3xl shadow-2xl p-8 md:p-12 mb-8">
+                <div class="animate-spin rounded-full h-32 w-32 md:h-40 md:w-40 border-8 border-kid-purple border-t-transparent mx-auto mb-6"></div>
+                <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4">
+                    ✨ Creating Magic...
+                </h2>
+                <p class="text-lg text-gray-600">
+                    Generating your visual encyclopedia entry!
+                </p>
+            </div>
+        </div>
+
+        <!-- Display State -->
+        <div id="display-state" class="hidden">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <!-- Image Display -->
+                <div class="bg-white rounded-3xl shadow-2xl p-6 md:p-8">
+                    <div id="image-container" class="relative overflow-hidden rounded-2xl bg-gray-100 aspect-square flex items-center justify-center">
+                        <img id="generated-image" class="w-full h-full object-cover ken-burns" alt="Generated visual" />
+                        <div id="spelling-overlay" class="absolute inset-0 flex items-center justify-center hidden">
+                            <div id="spelling-letters" class="text-4xl md:text-6xl font-bold text-white drop-shadow-lg"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Information Display -->
+                <div class="bg-white rounded-3xl shadow-2xl p-6 md:p-8 flex flex-col justify-center">
+                    <div class="text-center lg:text-left">
+                        <h3 id="word-title" class="text-3xl md:text-4xl font-bold text-gray-800 mb-6"></h3>
+                        <p id="word-description" class="text-lg md:text-xl text-gray-700 leading-relaxed mb-8"></p>
+                        
+                        <!-- Try Again Button -->
+                        <button id="try-again-button" class="bg-kid-yellow hover:bg-yellow-400 text-gray-800 font-bold py-4 px-8 rounded-full text-lg md:text-xl shadow-lg transform transition-all duration-200 hover:scale-105">
+                            🔄 Try Another Word
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Error State -->
+        <div id="error-state" class="text-center hidden">
+            <div class="bg-white rounded-3xl shadow-2xl p-8 md:p-12 mb-8">
+                <div class="text-6xl md:text-8xl mb-6">😅</div>
+                <h2 class="text-2xl md:text-3xl font-bold text-gray-800 mb-4">
+                    Oops! Something went wrong
+                </h2>
+                <p id="error-message" class="text-lg text-gray-600 mb-8">
+                    I didn't catch that. Please try again!
+                </p>
+                <button id="error-retry-button" class="bg-kid-green hover:bg-green-400 text-white font-bold py-4 px-8 rounded-full text-lg md:text-xl shadow-lg transform transition-all duration-200 hover:scale-105">
+                    🔄 Try Again
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="text-center py-8 mt-12">
+        <p class="text-white text-sm md:text-base opacity-75">
+            Made with ❤️ for curious kids everywhere
+        </p>
+    </footer>
+
+    <script>
+        class MagicVoicepedia {
+            constructor() {
+                this.recognition = null;
+                this.isRecording = false;
+                this.currentWord = '';
+                
+                // API Configuration - You'll need to add your Gemini API key
+                this.GEMINI_API_KEY = 'YOUR_GEMINI_API_KEY_HERE';
+                this.IMAGE_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:generateImage';
+                this.TEXT_API_URL = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent';
+                
+                this.initializeElements();
+                this.initializeSpeechRecognition();
+                this.bindEvents();
+            }
+            
+            initializeElements() {
+                this.elements = {
+                    initialState: document.getElementById('initial-state'),
+                    recordingState: document.getElementById('recording-state'),
+                    processingState: document.getElementById('processing-state'),
+                    displayState: document.getElementById('display-state'),
+                    errorState: document.getElementById('error-state'),
+                    talkButton: document.getElementById('talk-button'),
+                    tryAgainButton: document.getElementById('try-again-button'),
+                    errorRetryButton: document.getElementById('error-retry-button'),
+                    generatedImage: document.getElementById('generated-image'),
+                    wordTitle: document.getElementById('word-title'),
+                    wordDescription: document.getElementById('word-description'),
+                    spellingOverlay: document.getElementById('spelling-overlay'),
+                    spellingLetters: document.getElementById('spelling-letters'),
+                    errorMessage: document.getElementById('error-message')
+                };
+            }
+            
+            initializeSpeechRecognition() {
+                if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                    this.recognition = new SpeechRecognition();
+                    
+                    this.recognition.continuous = false;
+                    this.recognition.interimResults = false;
+                    this.recognition.lang = 'en-US';
+                    
+                    this.recognition.onstart = () => {
+                        this.isRecording = true;
+                        this.showState('recording');
+                    };
+                    
+                    this.recognition.onresult = (event) => {
+                        const transcript = event.results[0][0].transcript.toLowerCase().trim();
+                        this.currentWord = transcript;
+                        this.processWord(transcript);
+                    };
+                    
+                    this.recognition.onerror = (event) => {
+                        this.showError('Sorry, I had trouble hearing you. Please try again!');
+                    };
+                    
+                    this.recognition.onend = () => {
+                        this.isRecording = false;
+                    };
+                } else {
+                    this.showError('Sorry, your browser doesn\'t support speech recognition. Please try a different browser!');
+                }
+            }
+            
+            bindEvents() {
+                // Push to talk button
+                this.elements.talkButton.addEventListener('mousedown', () => this.startRecording());
+                this.elements.talkButton.addEventListener('mouseup', () => this.stopRecording());
+                this.elements.talkButton.addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    this.startRecording();
+                });
+                this.elements.talkButton.addEventListener('touchend', (e) => {
+                    e.preventDefault();
+                    this.stopRecording();
+                });
+                
+                // Try again buttons
+                this.elements.tryAgainButton.addEventListener('click', () => this.resetToInitial());
+                this.elements.errorRetryButton.addEventListener('click', () => this.resetToInitial());
+                
+                // Prevent context menu on long press
+                this.elements.talkButton.addEventListener('contextmenu', (e) => e.preventDefault());
+            }
+            
+            startRecording() {
+                if (this.recognition && !this.isRecording) {
+                    this.recognition.start();
+                }
+            }
+            
+            stopRecording() {
+                if (this.recognition && this.isRecording) {
+                    this.recognition.stop();
+                }
+            }
+            
+            async processWord(word) {
+                this.showState('processing');
+                
+                try {
+                    const isSpellingRequest = word.includes('spell') || this.isSpellingWord(word);
+                    
+                    // Generate image and text simultaneously
+                    const [imageResult, textResult] = await Promise.all([
+                        this.generateImage(word),
+                        this.generateText(word, isSpellingRequest)
+                    ]);
+                    
+                    if (imageResult && textResult) {
+                        this.displayResults(word, imageResult, textResult, isSpellingRequest);
+                    } else {
+                        throw new Error('Failed to generate content');
+                    }
+                } catch (error) {
+                    console.error('Error processing word:', error);
+                    this.showError('Oops! I had trouble creating your encyclopedia entry. Please try again!');
+                }
+            }
+            
+            isSpellingWord(word) {
+                // Simple check for common spelling requests
+                const spellingKeywords = ['spell', 'how do you spell', 'spelling'];
+                return spellingKeywords.some(keyword => word.includes(keyword));
+            }
+            
+            async generateImage(word) {
+                try {
+                    // For demo purposes, we'll use a placeholder image service
+                    // In production, you would integrate with the actual Gemini imagen API
+                    const cleanWord = word.replace(/spell\s*/gi, '').trim();
+                    const imageUrl = `https://source.unsplash.com/800x800/?${encodeURIComponent(cleanWord)},cartoon,illustration,kids`;
+                    
+                    return new Promise((resolve, reject) => {
+                        const img = new Image();
+                        img.onload = () => resolve(imageUrl);
+                        img.onerror = () => {
+                            // Fallback to a generic colorful image
+                            resolve('https://source.unsplash.com/800x800/?colorful,abstract,kids');
+                        };
+                        img.src = imageUrl;
+                    });
+                } catch (error) {
+                    console.error('Image generation error:', error);
+                    return null;
+                }
+            }
+            
+            async generateText(word, isSpellingRequest) {
+                try {
+                    // For demo purposes, we'll generate simple descriptions
+                    // In production, you would integrate with the actual Gemini text API
+                    const cleanWord = word.replace(/spell\s*/gi, '').trim();
+                    
+                    if (isSpellingRequest) {
+                        const spelling = cleanWord.toUpperCase().split('').join('-');
+                        return {
+                            title: cleanWord.charAt(0).toUpperCase() + cleanWord.slice(1),
+                            description: `${spelling}. ${this.getSimpleDefinition(cleanWord)}`,
+                            spelling: spelling
+                        };
+                    } else {
+                        return {
+                            title: cleanWord.charAt(0).toUpperCase() + cleanWord.slice(1),
+                            description: this.getSimpleDefinition(cleanWord),
+                            spelling: null
+                        };
+                    }
+                } catch (error) {
+                    console.error('Text generation error:', error);
+                    return null;
+                }
+            }
+            
+            getSimpleDefinition(word) {
+                // Simple definitions for common words - in production, this would use Gemini API
+                const definitions = {
+                    'dinosaur': 'A dinosaur is a big animal that lived millions of years ago. Some were very big and some were small!',
+                    'rainbow': 'A rainbow is a beautiful arc of colors that appears in the sky after it rains when the sun comes out.',
+                    'cat': 'A cat is a furry pet that says "meow" and likes to play with toys and sleep in sunny spots.',
+                    'dog': 'A dog is a friendly pet that barks and loves to play fetch and go for walks with their family.',
+                    'butterfly': 'A butterfly is a pretty insect with colorful wings that flies from flower to flower.',
+                    'elephant': 'An elephant is a very big gray animal with a long nose called a trunk and big ears.',
+                    'ocean': 'The ocean is a huge body of salty water where fish, whales, and many sea creatures live.',
+                    'star': 'A star is a bright light in the night sky. Our sun is a star that gives us light and warmth!',
+                    'flower': 'A flower is the pretty, colorful part of a plant that smells nice and attracts bees and butterflies.',
+                    'moon': 'The moon is the bright circle we see in the night sky. It changes shape throughout the month!'
+                };
+                
+                return definitions[word.toLowerCase()] || `A ${word} is something wonderful to learn about! Ask a grown-up to help you discover more.`;
+            }
+            
+            displayResults(word, imageUrl, textResult, isSpellingRequest) {
+                // Set the image
+                this.elements.generatedImage.src = imageUrl;
+                this.elements.generatedImage.alt = `Visual representation of ${word}`;
+                
+                // Set the text content
+                this.elements.wordTitle.textContent = textResult.title;
+                this.elements.wordDescription.textContent = textResult.description;
+                
+                // Handle spelling display
+                if (isSpellingRequest && textResult.spelling) {
+                    this.elements.spellingOverlay.classList.remove('hidden');
+                    this.animateSpelling(textResult.spelling);
+                } else {
+                    this.elements.spellingOverlay.classList.add('hidden');
+                }
+                
+                this.showState('display');
+            }
+            
+            animateSpelling(spelling) {
+                const letters = spelling.split('-');
+                this.elements.spellingLetters.innerHTML = '';
+                
+                letters.forEach((letter, index) => {
+                    setTimeout(() => {
+                        const letterSpan = document.createElement('span');
+                        letterSpan.textContent = letter;
+                        letterSpan.className = 'letter-appear inline-block mx-2';
+                        letterSpan.style.animationDelay = `${index * 0.1}s`;
+                        this.elements.spellingLetters.appendChild(letterSpan);
+                    }, index * 500);
+                });
+            }
+            
+            showState(state) {
+                // Hide all states
+                Object.values(this.elements).forEach(element => {
+                    if (element && element.id && element.id.includes('-state')) {
+                        element.classList.add('hidden');
+                    }
+                });
+                
+                // Show the requested state
+                const stateElement = this.elements[state + 'State'];
+                if (stateElement) {
+                    stateElement.classList.remove('hidden');
+                }
+            }
+            
+            showError(message) {
+                this.elements.errorMessage.textContent = message;
+                this.showState('error');
+            }
+            
+            resetToInitial() {
+                this.currentWord = '';
+                this.showState('initial');
+            }
+        }
+        
+        // Initialize the application when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new MagicVoicepedia();
+        });
+    </script>
+</body>
+</html>
